@@ -170,20 +170,86 @@ func getDayOfWeekAndTimeOfDay(t time.Time) (dayOfWeek string, timeOfDay string) 
 	dayOfWeek = t.Weekday().String()
 	switch hour := t.Hour(); {
 	case hour < 6:
-		timeOfDay = "after midnight"
+		timeOfDay = "after midnight [UTC 00:00-06:00)"
 	case hour < 12:
-		timeOfDay = "morning"
+		timeOfDay = "morning [UTC 06:00-12:00)"
 	case hour < 17:
-		timeOfDay = "afternoon"
+		timeOfDay = "afternoon [UTC 12:00-17:00)"
 	case hour < 20:
-		timeOfDay = "evening"
+		timeOfDay = "evening [UTC 17:00-20:00)"
 	default:
-		timeOfDay = "night"
+		timeOfDay = "night [UTC 20:00-00:00)"
 	}
 	return
 }
 
 func printPRInfos(prInfos []PRInfo) {
+
+	// print the average merge time
+	fmt.Printf("Average merge time: %v\n", averageMergeTime(prInfos))
+
+	// print the average time to first human response
+	fmt.Printf("Average time to first human response: %v\n", averageFirstReponseHumanTime(prInfos))
+
+	// print the average time to first bot response
+	fmt.Printf("Average time to first bot response: %v\n", averageTimeToFirstBotResponse(prInfos))
+
+	// print the average number of comments
+	fmt.Printf("Average number of comments per PR: %v\n", averageNumberOfComments(prInfos))
+
+	// print the average number of reviewers
+	fmt.Printf("Average number of reviewers per PR: %v\n", averageNumberOfReviewers(prInfos))
+
+	// print the average number of commits
+	fmt.Printf("Average number of commits per PR: %v\n", averageNumberOfCommits(prInfos))
+
+	// print the day of the week with the most PRs created
+	fmt.Printf("Day of the week with the most PRs created: %s\n", dayWithMostPRsCreated(prInfos))
+
+	// print the time of the day with the most PRs created
+	fmt.Printf("Time of the day with the most PRs created: %s\n", timeOfTheDayWithMostPRsCreated(prInfos))
+
+	// print the day of the week with the most PRs merged
+	fmt.Printf("Day of the week with the most PRs merged: %s\n", dayMostPRsMerged(prInfos))
+
+	// print the time of the day with the most PRs merged
+	fmt.Printf("Time of the day with the most PRs merged: %s\n", timeOfTheDayWithMostPRsMerged(prInfos))
+
+	// print the day of the week with the most first human responses
+	fmt.Printf("Day of the week with the most first human responses: %s\n", dayOfTheWeekWithMostFirstHumanResponses(prInfos))
+
+	// print the time of the day with the most first human responses
+	fmt.Printf("Time of the day with the most first human responses: %s\n", timeOfTheDayWithMostFirstHumanResponses(prInfos))
+
+	// print the day of the week with the most PR reviews
+	fmt.Printf("Day of the week with the most PR reviews: %s\n", dayOfTheWeekWithMostPRReviews(prInfos))
+
+	// print the time of the day with the most PR reviews
+	fmt.Printf("Time of the day with the most PR reviews: %s\n", timeOfTheDayWithMostPRReviews(prInfos))
+
+	// print the names of all developers who created, merged, reviewed, commented on, or approved PRs
+	fmt.Printf("Names of all developers who created, merged, reviewed, commented on, or approved PRs: %v\n", getTheNamesOfAllDevelopersWhoCreatedMergedReviewedCommentedOnOrApprovedPRs(prInfos))
+
+	// print the top reviewer
+	fmt.Printf("Top reviewer: %s\n", getTopReviewer(prInfos))
+
+	// print the top commenter
+	fmt.Printf("Top commenter: %s\n", getTopCommenter(prInfos))
+
+	// print the top creator
+	fmt.Printf("Top creator: %s\n", getTopCreator(prInfos))
+
+	// print the top first human responder
+	fmt.Printf("Top first human responder: %s\n", getTopFirstHumanResponder(prInfos))
+
+	// print the top first responder
+	fmt.Printf("Top first responder: %s\n", getTopFirstResponder(prInfos))
+
+	// print the top merger
+	fmt.Printf("Top merger: %s\n", getTopMerger(prInfos))
+
+	fmt.Println("----------------------------------------")
+
 	for _, prInfo := range prInfos {
 		firstHumanResponseMessage := "did not have a first human response"
 		if prInfo.FirstHumanResponder != "" {
@@ -207,4 +273,444 @@ func getYearAndQuarter(t time.Time) (int, string) {
 		quarter = "Q4"
 	}
 	return year, quarter
+}
+
+func averageMergeTime(prData []PRInfo) time.Duration {
+	if len(prData) == 0 {
+		return time.Duration(0)
+	}
+
+	var total time.Duration
+	for _, pr := range prData {
+		total += pr.Duration
+	}
+
+	return total / time.Duration(len(prData))
+}
+
+func averageFirstReponseHumanTime(prData []PRInfo) time.Duration {
+	if len(prData) == 0 {
+		return time.Duration(0)
+	}
+
+	var total time.Duration
+	for _, pr := range prData {
+		total += pr.TimeToFirstHumanResponse
+	}
+
+	return total / time.Duration(len(prData))
+}
+
+func averageNumberOfComments(prData []PRInfo) float64 {
+	if len(prData) == 0 {
+		return 0
+	}
+
+	var total int
+	for _, pr := range prData {
+		total += len(pr.Commenters)
+	}
+
+	return float64(total) / float64(len(prData))
+}
+
+func averageTimeToFirstBotResponse(prData []PRInfo) time.Duration {
+	if len(prData) == 0 {
+		return time.Duration(0)
+	}
+
+	var total time.Duration
+	for _, pr := range prData {
+		total += pr.TimeToFirstResponse
+	}
+
+	return total / time.Duration(len(prData))
+}
+
+func averageNumberOfReviewers(prData []PRInfo) float64 {
+	if len(prData) == 0 {
+		return 0
+	}
+
+	var total int
+	for _, pr := range prData {
+		total += len(pr.Reviewers)
+	}
+
+	return float64(total) / float64(len(prData))
+}
+
+func averageNumberOfCommits(prData []PRInfo) float64 {
+	if len(prData) == 0 {
+		return 0
+	}
+
+	var total int
+	for _, pr := range prData {
+		total += pr.Commits
+	}
+
+	return float64(total) / float64(len(prData))
+}
+
+func dayWithMostPRsCreated(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	days := make(map[string]int)
+	for _, pr := range prData {
+		days[pr.CreationDayOfWeek]++
+	}
+
+	max := 0
+	maxDay := ""
+	for day, count := range days {
+		if count > max {
+			max = count
+			maxDay = day
+		}
+	}
+
+	return maxDay
+}
+
+func timeOfTheDayWithMostPRsCreated(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	times := make(map[string]int)
+	for _, pr := range prData {
+		times[pr.CreationTimeOfDay]++
+	}
+
+	max := 0
+	maxTime := ""
+	for time, count := range times {
+		if count > max {
+			max = count
+			maxTime = time
+		}
+	}
+
+	return maxTime
+}
+
+func dayMostPRsMerged(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	days := make(map[string]int)
+	for _, pr := range prData {
+		days[pr.MergeDayOfWeek]++
+	}
+
+	max := 0
+	maxDay := ""
+	for day, count := range days {
+		if count > max {
+			max = count
+			maxDay = day
+		}
+	}
+
+	return maxDay
+}
+
+func timeOfTheDayWithMostPRsMerged(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	times := make(map[string]int)
+	for _, pr := range prData {
+		times[pr.MergeTimeOfDay]++
+	}
+
+	max := 0
+	maxTime := ""
+	for time, count := range times {
+		if count > max {
+			max = count
+			maxTime = time
+		}
+	}
+
+	return maxTime
+}
+
+func dayOfTheWeekWithMostFirstHumanResponses(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	days := make(map[string]int)
+	for _, pr := range prData {
+		if pr.FirstHumanResponder != "" {
+			days[pr.FirstHumanResponseDayOfWeek]++
+		}
+	}
+
+	max := 0
+	maxDay := ""
+	for day, count := range days {
+		if count > max {
+			max = count
+			maxDay = day
+		}
+	}
+
+	return maxDay
+}
+
+func timeOfTheDayWithMostFirstHumanResponses(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	times := make(map[string]int)
+	for _, pr := range prData {
+		if pr.FirstHumanResponder != "" {
+			times[pr.FirstHumanResponseTimeOfDay]++
+		}
+	}
+
+	max := 0
+	maxTime := ""
+	for time, count := range times {
+		if count > max {
+			max = count
+			maxTime = time
+		}
+	}
+
+	return maxTime
+}
+
+func getTheNamesOfAllDevelopersWhoCreatedMergedReviewedCommentedOnOrApprovedPRs(prData []PRInfo) []string {
+	if len(prData) == 0 {
+		return []string{}
+	}
+
+	developers := make(map[string]bool)
+	for _, pr := range prData {
+		developers[pr.Creator] = true
+		for _, commenter := range pr.Commenters {
+			developers[commenter] = true
+		}
+		for _, reviewer := range pr.Reviewers {
+			developers[reviewer] = true
+		}
+	}
+
+	var names []string
+	for name := range developers {
+		names = append(names, name)
+	}
+
+	return names
+}
+
+func dayOfTheWeekWithMostPRReviews(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	days := make(map[string]int)
+	for _, pr := range prData {
+		days[pr.FirstResponseDayOfWeek]++
+	}
+
+	max := 0
+	maxDay := ""
+	for day, count := range days {
+		if count > max {
+			max = count
+			maxDay = day
+		}
+	}
+
+	return maxDay
+}
+
+func timeOfTheDayWithMostPRReviews(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	times := make(map[string]int)
+	for _, pr := range prData {
+		times[pr.FirstResponseTimeOfDay]++
+	}
+
+	max := 0
+	maxTime := ""
+	for time, count := range times {
+		if count > max {
+			max = count
+			maxTime = time
+		}
+	}
+
+	return maxTime
+}
+
+// Create a struct for each developer to hold the data of interest
+type Developer struct {
+	Name                                    string
+	PRsCreated                              int
+	PRsMerged                               int
+	PRsReviewed                             int
+	PRsCommentedOn                          int
+	PRsFirstHumanResponse                   int
+	DayWithMostPRsCreated                   time.Weekday
+	TimeOfTheDayWithMostPRsCreated          string
+	DayWithMostPRsMerged                    time.Weekday
+	TimeOfTheDayWithMostPRsMerged           string
+	DayOfTheWeekWithMostFirstHumanResponses time.Weekday
+	TimeOfTheDayWithMostFirstHumanResponses string
+	DayOfTheWeekWithMostPRReviews           time.Weekday
+	TimeOfTheDayWithMostPRReviews           string
+	DayOfTheWeekWithMostPRComments          time.Weekday
+	TimeOfTheDayWithMostPRComments          string
+}
+
+func getTopReviewer(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	reviewers := make(map[string]int)
+	for _, pr := range prData {
+		for _, reviewer := range pr.Reviewers {
+			reviewers[reviewer]++
+		}
+	}
+
+	max := 0
+	maxReviewer := ""
+	for reviewer, count := range reviewers {
+		if count > max {
+			max = count
+			maxReviewer = reviewer
+		}
+	}
+
+	return maxReviewer
+}
+
+func getTopCommenter(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	commenters := make(map[string]int)
+	for _, pr := range prData {
+		for _, commenter := range pr.Commenters {
+			commenters[commenter]++
+		}
+	}
+
+	max := 0
+	maxCommenter := ""
+	for commenter, count := range commenters {
+		if count > max {
+			max = count
+			maxCommenter = commenter
+		}
+	}
+
+	return maxCommenter
+}
+
+func getTopCreator(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	creators := make(map[string]int)
+	for _, pr := range prData {
+		creators[pr.Creator]++
+	}
+
+	max := 0
+	maxCreator := ""
+	for creator, count := range creators {
+		if count > max {
+			max = count
+			maxCreator = creator
+		}
+	}
+
+	return maxCreator
+}
+
+func getTopFirstHumanResponder(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	firstHumanResponders := make(map[string]int)
+	for _, pr := range prData {
+		if pr.FirstHumanResponder != "" {
+			firstHumanResponders[pr.FirstHumanResponder]++
+		}
+	}
+
+	max := 0
+	maxFirstHumanResponder := ""
+	for firstHumanResponder, count := range firstHumanResponders {
+		if count > max {
+			max = count
+			maxFirstHumanResponder = firstHumanResponder
+		}
+	}
+
+	return maxFirstHumanResponder
+}
+
+func getTopFirstResponder(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	firstResponders := make(map[string]int)
+	for _, pr := range prData {
+		firstResponders[pr.FirstResponder]++
+	}
+
+	max := 0
+	maxFirstResponder := ""
+	for firstResponder, count := range firstResponders {
+		if count > max {
+			max = count
+			maxFirstResponder = firstResponder
+		}
+	}
+
+	return maxFirstResponder
+}
+
+func getTopMerger(prData []PRInfo) string {
+	if len(prData) == 0 {
+		return ""
+	}
+
+	mergers := make(map[string]int)
+	for _, pr := range prData {
+		mergers[pr.Creator]++
+	}
+
+	max := 0
+	maxMerger := ""
+	for merger, count := range mergers {
+		if count > max {
+			max = count
+			maxMerger = merger
+		}
+	}
+
+	return maxMerger
 }
