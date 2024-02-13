@@ -13,7 +13,7 @@ import (
 
 func main() {
 	owner := "codeready-toolchain"
-	repo := "member-operator"
+	repo := "sandbox-sre"
 
 	// Create a new GitHub client
 	ctx := context.Background()
@@ -23,7 +23,7 @@ func main() {
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
 
-	numPRs := 5 * 2 // Number of PRs to fetch (It will fetch twice, just because you might don't have enough merged PRs). Set to 0 to fetch all PRs.
+	numPRs := 127 // Number of PRs to fetch (It will fetch twice, just because you might don't have enough merged PRs). Set to 0 to fetch all PRs.
 	opt := getPullRequestListOptions(numPRs)
 
 	// Fetch the closed pull requests
@@ -48,12 +48,31 @@ func main() {
 
 	// Print the merge times for each PR
 	prInfos := getMergeTimes(ctx, client, owner, repo, allPRs)
-	printPRInfos(prInfos)
 
-	// Print the number and title of each closed pull request
-	// for _, pr := range allPRs {
-	// 	fmt.Printf("#%d: %s\n", *pr.Number, *pr.Title)
-	// }
+	// Print the PRs for each quarter and year
+	// years := []int{2023, 2022, 2021, 2020}
+	// quarters := []string{"Q4", "Q3", "Q2", "Q1"}
+	years := []int{2024}
+	quarters := []string{"Q1"}
+
+	for _, year := range years {
+		for _, quarter := range quarters {
+			fmt.Printf("Processing PRs for %s %d\n", quarter, year)
+			filteredPRInfos := filterPRInfosByQuarterAndYear(prInfos, year, quarter)
+			printPRInfos(filteredPRInfos)
+		}
+	}
+
+}
+
+func filterPRInfosByQuarterAndYear(prInfos []PRInfo, filterYear int, filterQuarter string) []PRInfo {
+	var filteredPRInfos []PRInfo
+	for _, prInfo := range prInfos {
+		if prInfo.Year == filterYear && prInfo.Quarter == filterQuarter {
+			filteredPRInfos = append(filteredPRInfos, prInfo)
+		}
+	}
+	return filteredPRInfos
 }
 
 func getPullRequestListOptions(numPRs int) *github.PullRequestListOptions {
